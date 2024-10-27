@@ -1,6 +1,6 @@
 import { createRouter } from '@/lib/create-app';
+import { HttpStatusCodes } from '@/lib/http-status-codes';
 import { createRoute } from '@hono/zod-openapi';
-import * as HttpStatusCodes from 'stoker/http-status-codes';
 import { jsonContent } from 'stoker/openapi/helpers';
 import { createMessageObjectSchema } from 'stoker/openapi/schemas';
 
