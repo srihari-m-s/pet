@@ -1,19 +1,38 @@
+import {
+  insertUsersSchema,
+  selectUsersSchema,
+  signUpUsersSchema,
+} from '@/db/schema/users';
 import { HttpStatusCodes } from '@/lib/http-status-codes';
 import { createRoute, z } from '@hono/zod-openapi';
-import { jsonContent } from 'stoker/openapi/helpers';
+import { jsonContent, jsonContentRequired } from 'stoker/openapi/helpers';
 
 const tags = ['users'];
 
-export const login = createRoute({
+export const signUp = createRoute({
   tags: tags,
   method: 'post',
-  path: '/users/login',
+  path: '/users/sign_up',
+  request: {
+    body: jsonContentRequired(signUpUsersSchema, 'users_create'),
+  },
   responses: {
-    [HttpStatusCodes.OK]: jsonContent(
-      z.object({ access: z.string() }),
-      'users login',
+    [HttpStatusCodes.OK]: jsonContent(insertUsersSchema, 'users_sign_up'),
+  },
+});
+
+export type SignUpRoute = typeof signUp;
+
+export const list = createRoute({
+  tags,
+  method: 'get',
+  path: '/users',
+  responses: {
+    [HttpStatusCodes.CREATED]: jsonContent(
+      z.array(selectUsersSchema),
+      'users_list',
     ),
   },
 });
 
-export type LoginRoute = typeof login;
+export type ListRoute = typeof list;

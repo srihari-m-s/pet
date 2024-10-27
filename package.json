@@ -5,7 +5,9 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "lint": "eslint .",
-    "lint:fix": "pnpm lint --fix"
+    "lint:fix": "pnpm lint --fix",
+    "generate": "npx drizzle-kit generate",
+    "migrate": "npx drizzle-kit generate & npx drizzle-kit migrate"
   },
   "dependencies": {
     "@hono/node-server": "^1.13.2",
@@ -13,16 +15,22 @@
     "@scalar/hono-api-reference": "^0.5.156",
     "dotenv": "^16.4.5",
     "dotenv-expand": "^11.0.6",
+    "drizzle-orm": "^0.35.3",
+    "drizzle-zod": "^0.5.1",
     "hono": "^4.6.7",
     "hono-pino": "^0.4.0",
+    "pg": "^8.13.1",
     "pino": "^9.5.0",
+    "postgres": "^3.4.4",
     "stoker": "^1.2.7",
     "zod": "^3.23.8"
   },
   "devDependencies": {
     "@types/node": "^20.11.17",
+    "@types/pg": "^8.11.10",
     "@typescript-eslint/eslint-plugin": "^8.11.0",
     "@typescript-eslint/parser": "^8.11.0",
+    "drizzle-kit": "^0.26.2",
     "eslint": "^9.13.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-format": "^0.1.2",
@@ -33,6 +41,6 @@
     "eslint-plugin-promise": "^7.1.0",
     "eslint-plugin-react": "^7.37.2",
     "prettier": "^3.3.3",
-    "tsx": "^4.7.1"
+    "tsx": "^4.19.2"
   }
 }
