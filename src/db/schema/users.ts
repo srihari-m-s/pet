@@ -16,7 +16,11 @@ export const users = pgTable('users', {
 
 export const selectUsersSchema = createSelectSchema(users);
 
-export const insertUsersSchema = createInsertSchema(users);
+export const insertUsersSchema = createInsertSchema(users, {
+  firstName: (s) => s.firstName.min(3).max(256),
+  mobile: (s) => s.mobile.min(10),
+  email: (s) => s.email.email(),
+});
 
 export const signUpUsersSchema = insertUsersSchema.omit({
   id: true,
