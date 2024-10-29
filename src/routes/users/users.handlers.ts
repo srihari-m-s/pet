@@ -8,6 +8,7 @@ import {
   GetOneRoute,
   ListRoute,
   PatchRoute,
+  RemoveRoute,
   SignUpRoute,
 } from './users.routes';
 
@@ -41,7 +42,8 @@ export const patch: AppRouteHandler<PatchRoute> = async (c) => {
   const [user] = await db
     .update(users)
     .set(updatedUser)
-    .where(eq(users.id, id)).returning();
+    .where(eq(users.id, id))
+    .returning();
 
   if (!user)
     return c.json(
@@ -50,4 +52,17 @@ export const patch: AppRouteHandler<PatchRoute> = async (c) => {
     );
 
   return c.json(user, HttpStatusCodes.OK);
+};
+
+export const remove: AppRouteHandler<RemoveRoute> = async (c) => {
+  const { id } = c.req.valid('param');
+  const result = await db.delete(users).where(eq(users.id, id)).returning();
+
+  if (!result.length)
+    return c.json(
+      { message: HttpStatusPhrases.NOT_FOUND },
+      HttpStatusCodes.NOT_FOUND,
+    );
+
+  return c.body(null, HttpStatusCodes.NO_CONTENT);
 };
