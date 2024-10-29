@@ -1,12 +1,16 @@
 import {
-  insertUsersSchema,
+  patchUserSchema,
   selectUsersSchema,
   signUpUsersSchema,
 } from '@/db/schema/users';
 import { notFoundSchema } from '@/lib/constants';
 import { HttpStatusCodes } from '@/lib/http-status-codes';
 import { createRoute, z } from '@hono/zod-openapi';
-import { jsonContent, jsonContentRequired } from 'stoker/openapi/helpers';
+import {
+  jsonContent,
+  jsonContentOneOf,
+  jsonContentRequired,
+} from 'stoker/openapi/helpers';
 import { createErrorSchema, IdParamsSchema } from 'stoker/openapi/schemas';
 
 const tags = ['users'];
@@ -16,13 +20,13 @@ export const signUp = createRoute({
   method: 'post',
   path: '/users/sign_up',
   request: {
-    body: jsonContentRequired(signUpUsersSchema, 'users_create'),
+    body: jsonContentRequired(signUpUsersSchema, 'users signUp payload'),
   },
   responses: {
-    [HttpStatusCodes.OK]: jsonContent(insertUsersSchema, 'users_sign_up'),
+    [HttpStatusCodes.OK]: jsonContent(selectUsersSchema, 'created users'),
     [HttpStatusCodes.UNPROCESSABLE_ENTITY]: jsonContent(
       createErrorSchema(signUpUsersSchema),
-      'users_sign_up_error',
+      'users signUp error',
     ),
   },
 });
@@ -34,7 +38,7 @@ export const list = createRoute({
   responses: {
     [HttpStatusCodes.CREATED]: jsonContent(
       z.array(selectUsersSchema),
-      'users_list',
+      'users list',
     ),
   },
 });
@@ -47,7 +51,7 @@ export const getOne = createRoute({
     params: IdParamsSchema,
   },
   responses: {
-    [HttpStatusCodes.OK]: jsonContent(selectUsersSchema, 'user_by_id'),
+    [HttpStatusCodes.OK]: jsonContent(selectUsersSchema, 'user by id'),
     [HttpStatusCodes.UNPROCESSABLE_ENTITY]: jsonContent(
       createErrorSchema(IdParamsSchema),
       'Invalid Id error',
@@ -56,6 +60,25 @@ export const getOne = createRoute({
   },
 });
 
+export const patch = createRoute({
+  tags: tags,
+  method: 'patch',
+  path: '/users/{id}',
+  request: {
+    params: IdParamsSchema,
+    body: jsonContentRequired(patchUserSchema, 'user patch'),
+  },
+  responses: {
+    [HttpStatusCodes.OK]: jsonContent(selectUsersSchema, 'patched user'),
+    [HttpStatusCodes.UNPROCESSABLE_ENTITY]: jsonContentOneOf(
+      [createErrorSchema(patchUserSchema), createErrorSchema(IdParamsSchema)],
+      'user patch error',
+    ),
+    [HttpStatusCodes.NOT_FOUND]: jsonContent(notFoundSchema, 'User not found'),
+  },
+});
+
 export type SignUpRoute = typeof signUp;
 export type ListRoute = typeof list;
 export type GetOneRoute = typeof getOne;
+export type PatchRoute = typeof patch;

@@ -27,3 +27,5 @@ export const signUpUsersSchema = insertUsersSchema.omit({
   createdAt: true,
   updatedAt: true,
 });
+
+export const patchUserSchema = signUpUsersSchema.partial()

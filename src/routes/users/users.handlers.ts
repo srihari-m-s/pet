@@ -4,7 +4,12 @@ import { HttpStatusCodes } from '@/lib/http-status-codes';
 import { HttpStatusPhrases } from '@/lib/http-status-phrases';
 import { AppRouteHandler } from '@/lib/types';
 import { eq } from 'drizzle-orm';
-import { GetOneRoute, ListRoute, SignUpRoute } from './users.routes';
+import {
+  GetOneRoute,
+  ListRoute,
+  PatchRoute,
+  SignUpRoute,
+} from './users.routes';
 
 export const signUp: AppRouteHandler<SignUpRoute> = async (c) => {
   const user = c.req.valid('json');
@@ -20,6 +25,23 @@ export const list: AppRouteHandler<ListRoute> = async (c) => {
 export const getOne: AppRouteHandler<GetOneRoute> = async (c) => {
   const { id } = c.req.valid('param');
   const [user] = await db.select().from(users).where(eq(users.id, id));
+
+  if (!user)
+    return c.json(
+      { message: HttpStatusPhrases.NOT_FOUND },
+      HttpStatusCodes.NOT_FOUND,
+    );
+
+  return c.json(user, HttpStatusCodes.OK);
+};
+
+export const patch: AppRouteHandler<PatchRoute> = async (c) => {
+  const updatedUser = c.req.valid('json');
+  const { id } = c.req.valid('param');
+  const [user] = await db
+    .update(users)
+    .set(updatedUser)
+    .where(eq(users.id, id)).returning();
 
   if (!user)
     return c.json(
