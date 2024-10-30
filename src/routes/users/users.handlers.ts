@@ -1,5 +1,5 @@
 import { db } from '@/db';
-import { users } from '@/db/schema/users';
+import { usersTable } from '@/db/schema/users';
 import { HttpStatusCodes } from '@/lib/http-status-codes';
 import { HttpStatusPhrases } from '@/lib/http-status-phrases';
 import { AppRouteHandler } from '@/lib/types';
@@ -14,18 +14,21 @@ import {
 
 export const signUp: AppRouteHandler<SignUpRoute> = async (c) => {
   const user = c.req.valid('json');
-  const [instertedUser] = await db.insert(users).values(user).returning();
+  const [instertedUser] = await db.insert(usersTable).values(user).returning();
   return c.json(instertedUser, HttpStatusCodes.OK);
 };
 
 export const list: AppRouteHandler<ListRoute> = async (c) => {
-  const usersList = await db.select().from(users);
+  const usersList = await db.select().from(usersTable);
   return c.json(usersList);
 };
 
 export const getOne: AppRouteHandler<GetOneRoute> = async (c) => {
   const { id } = c.req.valid('param');
-  const [user] = await db.select().from(users).where(eq(users.id, id));
+  const [user] = await db
+    .select()
+    .from(usersTable)
+    .where(eq(usersTable.id, id));
 
   if (!user)
     return c.json(
@@ -40,9 +43,9 @@ export const patch: AppRouteHandler<PatchRoute> = async (c) => {
   const updatedUser = c.req.valid('json');
   const { id } = c.req.valid('param');
   const [user] = await db
-    .update(users)
+    .update(usersTable)
     .set(updatedUser)
-    .where(eq(users.id, id))
+    .where(eq(usersTable.id, id))
     .returning();
 
   if (!user)
@@ -56,7 +59,10 @@ export const patch: AppRouteHandler<PatchRoute> = async (c) => {
 
 export const remove: AppRouteHandler<RemoveRoute> = async (c) => {
   const { id } = c.req.valid('param');
-  const result = await db.delete(users).where(eq(users.id, id)).returning();
+  const result = await db
+    .delete(usersTable)
+    .where(eq(usersTable.id, id))
+    .returning();
 
   if (!result.length)
     return c.json(

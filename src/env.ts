@@ -5,11 +5,33 @@ import { expand } from 'dotenv-expand';
 
 expand(config());
 
+const stringBoolean = z.coerce
+  .string()
+  .transform((val) => {
+    return val === 'true';
+  })
+  .default('false');
+
 const EnvSchema = z.object({
   NODE_ENV: z.string().default('development'),
   PORT: z.coerce.number().default(8080),
-  LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']),
-  DATABASE_URL: z.string().url()
+  LOG_LEVEL: z.enum([
+    'fatal',
+    'error',
+    'warn',
+    'info',
+    'debug',
+    'trace',
+    'silent',
+  ]),
+  DB_HOST: z.string().default('localhost'),
+  DB_USER: z.string(),
+  DB_PASSWORD: z.string(),
+  DB_NAME: z.string(),
+  DB_PORT: z.coerce.number().default(5432),
+  DATABASE_URL: z.string().url(),
+  DB_MIGRATING: stringBoolean,
+  DB_SEEDING: stringBoolean,
 });
 
 export type Env = z.infer<typeof EnvSchema>;

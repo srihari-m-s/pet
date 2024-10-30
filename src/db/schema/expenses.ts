@@ -7,7 +7,7 @@ import {
   timestamp,
 } from 'drizzle-orm/pg-core';
 
-export const expenses = pgTable(
+export const expensesTable = pgTable(
   'expenses',
   {
     id: serial('id').primaryKey(),
