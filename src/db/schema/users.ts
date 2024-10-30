@@ -6,11 +6,11 @@ export const usersTable = pgTable('users', {
   firstName: text('first_name').notNull(),
   lastName: text('last_name'),
   email: text('email').notNull(),
-  mobile: text('mobile').notNull(),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at')
+  mobile: text('mobile').notNull().unique(),
+  createdAt: timestamp('created_at', { mode: 'string' }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { mode: 'string' })
     .defaultNow()
-    .$onUpdateFn(() => new Date())
+    .$onUpdateFn(() => new Date().toISOString())
     .notNull(),
 });
 
