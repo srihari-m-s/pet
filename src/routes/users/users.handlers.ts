@@ -1,21 +1,68 @@
 import { db } from '@/db';
 import { usersTable } from '@/db/schema/users';
+import { generatePassword } from '@/lib/generate-password';
 import { HttpStatusCodes } from '@/lib/http-status-codes';
 import { HttpStatusPhrases } from '@/lib/http-status-phrases';
+import { hashPassword } from '@/lib/protect-password';
 import { AppRouteHandler } from '@/lib/types';
 import { eq } from 'drizzle-orm';
 import {
   GetOneRoute,
   ListRoute,
+  LoginRoute,
   PatchRoute,
   RemoveRoute,
   SignUpRoute,
 } from './users.routes';
 
+export async function getUserWithoutPassword(userId: number) {
+  const [user] = await db
+    .select({
+      id: usersTable.id,
+      firstName: usersTable.firstName,
+      lastName: usersTable.lastName,
+      email: usersTable.email,
+      mobile: usersTable.mobile,
+      emailVerifiedAt: usersTable.emailVerifiedAt,
+      createdAt: usersTable.createdAt,
+      updatedAt: usersTable.updatedAt,
+    })
+    .from(usersTable)
+    .where(eq(usersTable.id, userId));
+
+  return user;
+}
+
+export async function getUserListWithoutPassword(userId: number) {
+  const users = await db
+    .select({
+      id: usersTable.id,
+      firstName: usersTable.firstName,
+      lastName: usersTable.lastName,
+      email: usersTable.email,
+      mobile: usersTable.mobile,
+      emailVerifiedAt: usersTable.emailVerifiedAt,
+      createdAt: usersTable.createdAt,
+      updatedAt: usersTable.updatedAt,
+    })
+    .from(usersTable);
+  return users;
+}
+
 export const signUp: AppRouteHandler<SignUpRoute> = async (c) => {
   const user = c.req.valid('json');
-  const [instertedUser] = await db.insert(usersTable).values(user).returning();
-  return c.json(instertedUser, HttpStatusCodes.OK);
+
+  const randomPassword = generatePassword();
+  // todo: handle has fail
+  const hashedPassword = await hashPassword(randomPassword);
+
+  const newUser = { ...user, password: hashedPassword };
+
+  const [{ password, ...insertedUser }] = await db
+    .insert(usersTable)
+    .values(newUser)
+    .returning();
+  return c.json(insertedUser, HttpStatusCodes.OK);
 };
 
 export const list: AppRouteHandler<ListRoute> = async (c) => {
@@ -71,4 +118,8 @@ export const remove: AppRouteHandler<RemoveRoute> = async (c) => {
     );
 
   return c.body(null, HttpStatusCodes.NO_CONTENT);
+};
+
+export const login: AppRouteHandler<LoginRoute> = async (c) => {
+  const payload = c.req.valid('json');
 };

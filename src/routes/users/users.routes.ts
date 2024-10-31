@@ -1,4 +1,5 @@
 import {
+  loginSchema,
   patchUserSchema,
   selectUsersSchema,
   signUpUsersSchema,
@@ -11,7 +12,11 @@ import {
   jsonContentOneOf,
   jsonContentRequired,
 } from 'stoker/openapi/helpers';
-import { createErrorSchema, IdParamsSchema } from 'stoker/openapi/schemas';
+import {
+  createErrorSchema,
+  createMessageObjectSchema,
+  IdParamsSchema,
+} from 'stoker/openapi/schemas';
 
 const tags = ['users'];
 
@@ -89,9 +94,25 @@ export const remove = createRoute({
     [HttpStatusCodes.NO_CONTENT]: { description: 'User deleted' },
     [HttpStatusCodes.UNPROCESSABLE_ENTITY]: jsonContent(
       createErrorSchema(IdParamsSchema),
-      'INvalid Id error',
+      'Invalid Id error',
     ),
     [HttpStatusCodes.NOT_FOUND]: jsonContent(notFoundSchema, 'User not found'),
+  },
+});
+
+export const login = createRoute({
+  tags: tags,
+  method: 'post',
+  path: '/users/login',
+  request: {
+    body: jsonContentRequired(loginSchema, 'login payload'),
+  },
+  responses: {
+    [HttpStatusCodes.OK]: { description: 'creds verified' },
+    [HttpStatusCodes.UNAUTHORIZED]: jsonContent(
+      createMessageObjectSchema('Invalid Credentials'),
+      'Invalid credentials',
+    ),
   },
 });
 
@@ -100,3 +121,4 @@ export type ListRoute = typeof list;
 export type GetOneRoute = typeof getOne;
 export type PatchRoute = typeof patch;
 export type RemoveRoute = typeof remove;
+export type LoginRoute = typeof login;
