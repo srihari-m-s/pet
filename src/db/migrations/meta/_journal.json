@@ -15,6 +15,27 @@
       "when": 1730290470054,
       "tag": "0001_acoustic_gladiator",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1730432232557,
+      "tag": "0002_faithful_toxin",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1730432676127,
+      "tag": "0003_modern_roulette",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1730432741979,
+      "tag": "0004_serious_tomas",
+      "breakpoints": true
     }
   ]
 }

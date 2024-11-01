@@ -9,9 +9,11 @@ export const usersTable = pgTable('users', {
   email: text('email').notNull().unique(),
   mobile: text('mobile').notNull().unique(),
   password: text('password').notNull().unique(),
-  emailVerifiedAt: timestamp('email_verified_at', { mode: 'string' }).default(
-    '',
-  ),
+  emailVerifiedAt: timestamp('email_verified_at', {
+    mode: 'string',
+  })
+    .defaultNow()
+    .notNull(),
   createdAt: timestamp('created_at', { mode: 'string' }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { mode: 'string' })
     .defaultNow()

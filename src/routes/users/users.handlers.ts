@@ -3,6 +3,7 @@ import { usersTable } from '@/db/schema/users';
 import { generatePassword } from '@/lib/generate-password';
 import { HttpStatusCodes } from '@/lib/http-status-codes';
 import { HttpStatusPhrases } from '@/lib/http-status-phrases';
+import { sendEmail } from '@/lib/mailer';
 import { hashPassword } from '@/lib/protect-password';
 import { AppRouteHandler } from '@/lib/types';
 import { eq } from 'drizzle-orm';
@@ -33,7 +34,7 @@ export async function getUserWithoutPassword(userId: number) {
   return user;
 }
 
-export async function getUserListWithoutPassword(userId: number) {
+export async function getUserListWithoutPassword() {
   const users = await db
     .select({
       id: usersTable.id,
@@ -53,7 +54,15 @@ export const signUp: AppRouteHandler<SignUpRoute> = async (c) => {
   const user = c.req.valid('json');
 
   const randomPassword = generatePassword();
-  // todo: handle has fail
+
+  // todo: handle email transfer failure
+  await sendEmail(
+    user.email,
+    'Welcome to your PET',
+    `Here is your temporary password - ${randomPassword}. Please reset your password once you login.`,
+  );
+
+  // todo: handle hash fail
   const hashedPassword = await hashPassword(randomPassword);
 
   const newUser = { ...user, password: hashedPassword };
@@ -66,16 +75,13 @@ export const signUp: AppRouteHandler<SignUpRoute> = async (c) => {
 };
 
 export const list: AppRouteHandler<ListRoute> = async (c) => {
-  const usersList = await db.select().from(usersTable);
+  const usersList = await getUserListWithoutPassword();
   return c.json(usersList);
 };
 
 export const getOne: AppRouteHandler<GetOneRoute> = async (c) => {
   const { id } = c.req.valid('param');
-  const [user] = await db
-    .select()
-    .from(usersTable)
-    .where(eq(usersTable.id, id));
+  const user = await getUserWithoutPassword(id);
 
   if (!user)
     return c.json(
@@ -89,7 +95,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c) => {
 export const patch: AppRouteHandler<PatchRoute> = async (c) => {
   const updatedUser = c.req.valid('json');
   const { id } = c.req.valid('param');
-  const [user] = await db
+  const [{ password, ...user }] = await db
     .update(usersTable)
     .set(updatedUser)
     .where(eq(usersTable.id, id))
@@ -122,4 +128,6 @@ export const remove: AppRouteHandler<RemoveRoute> = async (c) => {
 
 export const login: AppRouteHandler<LoginRoute> = async (c) => {
   const payload = c.req.valid('json');
+
+  return c.body(null, HttpStatusCodes.OK);
 };
