@@ -6,6 +6,7 @@ import {
 } from '@/db/schema/users';
 import { notFoundSchema } from '@/lib/constants';
 import { HttpStatusCodes } from '@/lib/http-status-codes';
+import { HttpStatusPhrases } from '@/lib/http-status-phrases';
 import { createRoute, z } from '@hono/zod-openapi';
 import {
   jsonContent,
@@ -108,10 +109,17 @@ export const login = createRoute({
     body: jsonContentRequired(loginSchema, 'login payload'),
   },
   responses: {
-    [HttpStatusCodes.OK]: { description: 'creds verified' },
+    [HttpStatusCodes.OK]: jsonContent(
+      createMessageObjectSchema('Credentials Verified'),
+      'creds verified',
+    ),
     [HttpStatusCodes.UNAUTHORIZED]: jsonContent(
       createMessageObjectSchema('Invalid Credentials'),
       'Invalid credentials',
+    ),
+    [HttpStatusCodes.INTERNAL_SERVER_ERROR]: jsonContent(
+      createMessageObjectSchema(HttpStatusPhrases.INTERNAL_SERVER_ERROR),
+      HttpStatusPhrases.INTERNAL_SERVER_ERROR,
     ),
   },
 });

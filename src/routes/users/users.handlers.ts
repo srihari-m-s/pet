@@ -1,12 +1,20 @@
 import { db } from '@/db';
 import { usersTable } from '@/db/schema/users';
+import { unauthorizedResponse } from '@/lib/constants';
 import { generatePassword } from '@/lib/generate-password';
 import { HttpStatusCodes } from '@/lib/http-status-codes';
 import { HttpStatusPhrases } from '@/lib/http-status-phrases';
 import { sendEmail } from '@/lib/mailer';
-import { hashPassword } from '@/lib/protect-password';
+import { comparePassword, hashPassword } from '@/lib/protect-password';
 import { AppRouteHandler } from '@/lib/types';
+import { z } from '@hono/zod-openapi';
 import { eq } from 'drizzle-orm';
+import {
+  getUserByIdentifier,
+  getUserList,
+  getUserWithId,
+  updateUserEmailVerification,
+} from './users.helpers';
 import {
   GetOneRoute,
   ListRoute,
@@ -15,40 +23,6 @@ import {
   RemoveRoute,
   SignUpRoute,
 } from './users.routes';
-
-export async function getUserWithoutPassword(userId: number) {
-  const [user] = await db
-    .select({
-      id: usersTable.id,
-      firstName: usersTable.firstName,
-      lastName: usersTable.lastName,
-      email: usersTable.email,
-      mobile: usersTable.mobile,
-      emailVerifiedAt: usersTable.emailVerifiedAt,
-      createdAt: usersTable.createdAt,
-      updatedAt: usersTable.updatedAt,
-    })
-    .from(usersTable)
-    .where(eq(usersTable.id, userId));
-
-  return user;
-}
-
-export async function getUserListWithoutPassword() {
-  const users = await db
-    .select({
-      id: usersTable.id,
-      firstName: usersTable.firstName,
-      lastName: usersTable.lastName,
-      email: usersTable.email,
-      mobile: usersTable.mobile,
-      emailVerifiedAt: usersTable.emailVerifiedAt,
-      createdAt: usersTable.createdAt,
-      updatedAt: usersTable.updatedAt,
-    })
-    .from(usersTable);
-  return users;
-}
 
 export const signUp: AppRouteHandler<SignUpRoute> = async (c) => {
   const user = c.req.valid('json');
@@ -75,13 +49,13 @@ export const signUp: AppRouteHandler<SignUpRoute> = async (c) => {
 };
 
 export const list: AppRouteHandler<ListRoute> = async (c) => {
-  const usersList = await getUserListWithoutPassword();
+  const usersList = await getUserList();
   return c.json(usersList);
 };
 
 export const getOne: AppRouteHandler<GetOneRoute> = async (c) => {
   const { id } = c.req.valid('param');
-  const user = await getUserWithoutPassword(id);
+  const user = await getUserWithId(id);
 
   if (!user)
     return c.json(
@@ -129,5 +103,42 @@ export const remove: AppRouteHandler<RemoveRoute> = async (c) => {
 export const login: AppRouteHandler<LoginRoute> = async (c) => {
   const payload = c.req.valid('json');
 
-  return c.body(null, HttpStatusCodes.OK);
+  const isEmail = z.string().email().safeParse(payload.identifier).success;
+  const isMobile = z
+    .string()
+    .regex(/^[0-9]{10}$/)
+    .safeParse(payload.identifier).success;
+
+  if (!isEmail && !isMobile) {
+    return unauthorizedResponse(c);
+  }
+
+  if (!isEmail && !isMobile) {
+    return unauthorizedResponse(c);
+  }
+
+  // Retrieve user by email or mobile
+  const user = await getUserByIdentifier(payload.identifier, isEmail);
+  if (!user) {
+    return unauthorizedResponse(c);
+  }
+
+  // Verify password
+  const verified = await comparePassword(payload.password, user.password);
+  if (!verified) {
+    return unauthorizedResponse(c);
+  }
+
+  // Update email verification date if it hasn't been verified
+  if (user.createdAt === user.emailVerifiedAt) {
+    const updated = await updateUserEmailVerification(user.id);
+    if (!updated) {
+      return c.json(
+        { message: 'Internal Server Error' },
+        HttpStatusCodes.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  return c.json({ message: HttpStatusPhrases.OK }, HttpStatusCodes.OK);
 };
