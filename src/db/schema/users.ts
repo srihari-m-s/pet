@@ -50,3 +50,9 @@ export const loginSchema = insertUsersSchema
   .extend({
     identifier: z.string().min(1),
   });
+
+export const forgotPasswordSchema = selectUsersSchema.pick({ email: true });
+
+export const resetPasswordSchema = fullSelectUsersSchema.pick({
+  password: true,
+});

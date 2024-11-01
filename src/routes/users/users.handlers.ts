@@ -1,7 +1,7 @@
 import { db } from '@/db';
 import { usersTable } from '@/db/schema/users';
 import env from '@/env';
-import { unauthorizedResponse } from '@/lib/constants';
+import { notFoundResponse, unauthorizedResponse } from '@/lib/constants';
 import { generatePassword } from '@/lib/generate-password';
 import { HttpStatusCodes } from '@/lib/http-status-codes';
 import { HttpStatusPhrases } from '@/lib/http-status-phrases';
@@ -11,7 +11,8 @@ import { AppRouteHandler } from '@/lib/types';
 import { z } from '@hono/zod-openapi';
 import { eq } from 'drizzle-orm';
 import { setCookie } from 'hono/cookie';
-import { sign } from 'hono/jwt';
+import { sign, verify } from 'hono/jwt';
+import { JWTPayload } from 'hono/utils/jwt/types';
 import {
   getUserByIdentifier,
   getUserList,
@@ -19,11 +20,13 @@ import {
   updateUserEmailVerification,
 } from './users.helpers';
 import {
+  ForgotPasswordRoute,
   GetOneRoute,
   ListRoute,
   LoginRoute,
   PatchRoute,
   RemoveRoute,
+  ResetPasswordRoute,
   SignUpRoute,
 } from './users.routes';
 
@@ -71,6 +74,7 @@ export const getOne: AppRouteHandler<GetOneRoute> = async (c) => {
 
 export const patch: AppRouteHandler<PatchRoute> = async (c) => {
   const updatedUser = c.req.valid('json');
+
   const { id } = c.req.valid('param');
   const [{ password, ...user }] = await db
     .update(usersTable)
@@ -153,4 +157,59 @@ export const login: AppRouteHandler<LoginRoute> = async (c) => {
   setCookie(c, env.AUTH_COOKIE, token, { httpOnly: true });
 
   return c.json({ message: HttpStatusPhrases.OK }, HttpStatusCodes.OK);
+};
+
+export const forgotPassword: AppRouteHandler<ForgotPasswordRoute> = async (
+  c,
+) => {
+  const { email } = c.req.valid('json');
+
+  const user = await getUserByIdentifier(email, true);
+  if (!user) {
+    return notFoundResponse(c);
+  }
+
+  const slugTokenPayload: JWTPayload = {
+    userId: user.id,
+    exp: Math.floor(Date.now() / 1000) + 60 * 15,
+  };
+
+  const slug = await sign(slugTokenPayload, env.AUTH_SECRET);
+
+  sendEmail(
+    email,
+    'Reset Password',
+    `Here is the link to reset your password. Please do not share this link -\n http://localhost:3000/users/reset_password/${slug} \n The link will expire in 15 minutes`,
+  );
+
+  return c.json(
+    { message: `Reset link has been sent to ${email}` },
+    HttpStatusCodes.OK,
+  );
+};
+
+export const resetPassword: AppRouteHandler<ResetPasswordRoute> = async (c) => {
+  const { password } = c.req.valid('json');
+  const { slug } = c.req.valid('param');
+
+  let userId: number = 0;
+
+  try {
+    const decoded = await verify(slug, env.AUTH_SECRET);
+    userId = Number(decoded.userId);
+  } catch {
+    return c.json({ message: 'Link Expired!' }, HttpStatusCodes.FORBIDDEN);
+  }
+
+  const hashedPassword = await hashPassword(password);
+
+  await db
+    .update(usersTable)
+    .set({ password: hashedPassword })
+    .where(eq(usersTable.id, userId));
+
+  return c.json(
+    { message: 'Password was reset succesfully' },
+    HttpStatusCodes.OK,
+  );
 };

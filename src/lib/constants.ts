@@ -21,3 +21,17 @@ export const unauthorizedResponse = (c: Context) => {
     HttpStatusCodes.UNAUTHORIZED,
   );
 };
+
+export const notFoundResponseDef = {
+  [HttpStatusCodes.NOT_FOUND]: jsonContent(
+    createMessageObjectSchema(HttpStatusPhrases.NOT_FOUND),
+    HttpStatusPhrases.NOT_FOUND,
+  ),
+};
+
+export const notFoundResponse = (c: Context) => {
+  return c.json(
+    { message: HttpStatusPhrases.NOT_FOUND },
+    HttpStatusCodes.NOT_FOUND,
+  );
+};

@@ -1,10 +1,12 @@
 import {
+  forgotPasswordSchema,
   loginSchema,
   patchUserSchema,
+  resetPasswordSchema,
   selectUsersSchema,
   signUpUsersSchema,
 } from '@/db/schema/users';
-import { notFoundSchema } from '@/lib/constants';
+import { notFoundResponseDef, notFoundSchema } from '@/lib/constants';
 import { createPrivateRoute } from '@/lib/create-private-route';
 import { HttpStatusCodes } from '@/lib/http-status-codes';
 import { HttpStatusPhrases } from '@/lib/http-status-phrases';
@@ -127,9 +129,50 @@ export const remove = createPrivateRoute({
   },
 });
 
+export const forgotPassword = createRoute({
+  tags,
+  method: 'post',
+  path: '/users/forgot_password',
+  request: {
+    body: jsonContentRequired(
+      forgotPasswordSchema,
+      'Valid email that will accept reset link',
+    ),
+  },
+  responses: {
+    ...notFoundResponseDef,
+    [HttpStatusCodes.OK]: jsonContent(
+      createMessageObjectSchema('Reset link sent to valid email'),
+      'Reset link sent to valid email',
+    ),
+  },
+});
+
+export const resetPassword = createRoute({
+  tags,
+  method: 'post',
+  path: '/users/reset_password/{slug}',
+  request: {
+    params: z.object({ slug: z.string() }),
+    body: jsonContentRequired(resetPasswordSchema, 'New password'),
+  },
+  responses: {
+    [HttpStatusCodes.FORBIDDEN]: jsonContent(
+      createMessageObjectSchema(HttpStatusPhrases.FORBIDDEN),
+      HttpStatusPhrases.FORBIDDEN,
+    ),
+    [HttpStatusCodes.OK]: jsonContent(
+      createMessageObjectSchema('Password reset success'),
+      'Password reset success',
+    ),
+  },
+});
+
 export type SignUpRoute = typeof signUp;
 export type ListRoute = typeof list;
 export type GetOneRoute = typeof getOne;
 export type PatchRoute = typeof patch;
 export type RemoveRoute = typeof remove;
 export type LoginRoute = typeof login;
+export type ForgotPasswordRoute = typeof forgotPassword;
+export type ResetPasswordRoute = typeof resetPassword;
