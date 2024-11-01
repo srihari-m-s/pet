@@ -1,5 +1,6 @@
 import { db } from '@/db';
 import { usersTable } from '@/db/schema/users';
+import env from '@/env';
 import { unauthorizedResponse } from '@/lib/constants';
 import { generatePassword } from '@/lib/generate-password';
 import { HttpStatusCodes } from '@/lib/http-status-codes';
@@ -9,6 +10,8 @@ import { comparePassword, hashPassword } from '@/lib/protect-password';
 import { AppRouteHandler } from '@/lib/types';
 import { z } from '@hono/zod-openapi';
 import { eq } from 'drizzle-orm';
+import { setCookie } from 'hono/cookie';
+import { sign } from 'hono/jwt';
 import {
   getUserByIdentifier,
   getUserList,
@@ -134,11 +137,20 @@ export const login: AppRouteHandler<LoginRoute> = async (c) => {
     const updated = await updateUserEmailVerification(user.id);
     if (!updated) {
       return c.json(
-        { message: 'Internal Server Error' },
+        { message: HttpStatusPhrases.INTERNAL_SERVER_ERROR },
         HttpStatusCodes.INTERNAL_SERVER_ERROR,
       );
     }
   }
+
+  const jwtPayload = {
+    userId: user.id,
+    exp:
+      Math.floor(Date.now() / 1000) + 60 * 60 * Number(env.AUTH_TOKEN_EXPIRY),
+  };
+  const token = await sign(jwtPayload, env.AUTH_SECRET);
+
+  setCookie(c, env.AUTH_COOKIE, token, { httpOnly: true });
 
   return c.json({ message: HttpStatusPhrases.OK }, HttpStatusCodes.OK);
 };

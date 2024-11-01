@@ -1,4 +1,5 @@
 import { Context } from 'hono';
+import { jsonContent } from 'stoker/openapi/helpers';
 import { createMessageObjectSchema } from 'stoker/openapi/schemas';
 import { HttpStatusCodes } from './http-status-codes';
 import { HttpStatusPhrases } from './http-status-phrases';
@@ -6,6 +7,13 @@ import { HttpStatusPhrases } from './http-status-phrases';
 export const notFoundSchema = createMessageObjectSchema(
   HttpStatusPhrases.NOT_FOUND,
 );
+
+export const unauthorizedResponseDef = {
+  [HttpStatusCodes.UNAUTHORIZED]: jsonContent(
+    createMessageObjectSchema(HttpStatusPhrases.UNAUTHORIZED),
+    HttpStatusPhrases.UNAUTHORIZED,
+  ),
+};
 
 export const unauthorizedResponse = (c: Context) => {
   return c.json(

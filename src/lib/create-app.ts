@@ -1,6 +1,7 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { notFound, onError, serveEmojiFavicon } from 'stoker/middlewares';
+import { notFound, serveEmojiFavicon } from 'stoker/middlewares';
 
+import { handleError } from '@/middlewares/handle-error';
 import { usePinoLogger } from '@/middlewares/pino-logger';
 import { defaultHook } from 'stoker/openapi';
 import { AppBindings } from './types';
@@ -18,6 +19,6 @@ export default function createApp() {
   app.use(usePinoLogger());
 
   app.notFound(notFound);
-  app.onError(onError);
+  app.onError(handleError);
   return app;
 }

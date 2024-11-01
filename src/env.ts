@@ -24,6 +24,9 @@ const EnvSchema = z.object({
     'trace',
     'silent',
   ]),
+  AUTH_COOKIE: z.string(),
+  AUTH_SECRET: z.string(),
+  AUTH_TOKEN_EXPIRY: z.coerce.number().default(1),
   DB_HOST: z.string().default('localhost'),
   DB_USER: z.string(),
   DB_PASSWORD: z.string(),
@@ -32,6 +35,8 @@ const EnvSchema = z.object({
   DATABASE_URL: z.string().url(),
   DB_MIGRATING: stringBoolean,
   DB_SEEDING: stringBoolean,
+  GMAIL_USER: z.string(),
+  GMAIL_APP_PASSWORD: z.string(),
 });
 
 export type Env = z.infer<typeof EnvSchema>;
