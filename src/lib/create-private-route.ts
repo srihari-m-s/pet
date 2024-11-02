@@ -35,15 +35,15 @@ export function createPrivateRoute<
 ): R & {
   getRoutingPath(): RoutingPath<R['path']>;
 } {
-  const middlewares = props.middleware
+  const privateRouteMiddlewares = props.middleware
     ? Array.isArray(props.middleware)
       ? [authMiddleware, ...props.middleware]
       : [authMiddleware, props.middleware]
-    : [authMiddleware];
+    : authMiddleware;
 
   const routeConfigWithMiddleware: R = {
     ...props,
-    middlewares: middlewares,
+    middleware: privateRouteMiddlewares,
     responses: {
       ...props.responses,
       ...unauthorizedResponseDef,

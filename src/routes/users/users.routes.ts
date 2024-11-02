@@ -10,7 +10,6 @@ import { notFoundResponseDef, notFoundSchema } from '@/lib/constants';
 import { createPrivateRoute } from '@/lib/create-private-route';
 import { HttpStatusCodes } from '@/lib/http-status-codes';
 import { HttpStatusPhrases } from '@/lib/http-status-phrases';
-import { authMiddleware } from '@/middlewares/auth';
 import { createRoute, z } from '@hono/zod-openapi';
 import {
   jsonContent,
@@ -69,10 +68,7 @@ export const list = createPrivateRoute({
   method: 'get',
   path: '/users',
   responses: {
-    [HttpStatusCodes.CREATED]: jsonContent(
-      z.array(selectUsersSchema),
-      'users list',
-    ),
+    [HttpStatusCodes.OK]: jsonContent(z.array(selectUsersSchema), 'users list'),
   },
 });
 
@@ -83,7 +79,6 @@ export const getOne = createPrivateRoute({
   request: {
     params: IdParamsSchema,
   },
-  middleware: authMiddleware,
   responses: {
     [HttpStatusCodes.OK]: jsonContent(selectUsersSchema, 'user by id'),
     [HttpStatusCodes.UNPROCESSABLE_ENTITY]: jsonContent(
